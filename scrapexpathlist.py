@@ -5,35 +5,25 @@ import urllib.request
 import urllib.error
 from lxml import etree
 from lxml.html import html5parser
-import pandas
-from typing import Callable, List
+from pandas import DataFrame
+from typing import Callable, List, Tuple
 from http.client import HTTPResponse
 import re
 
 
-_content_type_charset_re = re.compile(';\\s*charset=([-.a-zA-Z0-9]+)')
+def fetch(params):
+    url = params['url']
+    selector_string = params['selector']
 
-
-def render(wf_module, empty_table):
-    fetched_table = wf_module.retrieve_fetched_table()
-    if fetched_table is not None:
-        table = fetched_table
-    return table
-
-
-def event(wf_module, event=None, **kwargs):
-    url = wf_module.get_param_string('url')
-    selector_string = wf_module.get_param_string('selector')
-
-    if url is None: return
-    if selector_string is None: return
+    if not url: return (None, 'Missing URL')
+    if not selector_string is None: return (None, 'Missing selector')
 
     try:
         selector = xpath(selector_string)
     except etree.XPathSyntaxError as e:
-        wf_module.set_error(f'Bad XPath input: {e.msg}')
+        return (None, f'Bad XPath input: {e.msg}')
 
-    refresh(wf_module, url, selector, **kwargs)
+    return do_fetch(url, selector)
 
 
 def xpath(s: str) -> etree.XPath:
@@ -56,14 +46,10 @@ def xpath(s: str) -> etree.XPath:
     )
 
 
-def parse_document(text: str, is_html: bool,
-                   source_url: str=None) -> etree._Element:
+def parse_document(text: str, is_html: bool) -> etree._Element:
     """Build a etree root node from `text`.
 
     Throws TODO what errors?
-
-    Keyword arguments:
-    source_url -- if set, convert src and href attributes to absolute URLs
     """
     if is_html:
         parser = html5parser.HTMLParser(namespaceHTMLElements=False)
@@ -108,24 +94,38 @@ def select(tree: etree._Element, selector: etree.XPath) -> List[str]:
         return [ result ]
 
 
-def poll(url: str, selector: etree.XPath, 
-         urlopen: Callable[[str], HTTPResponse]=urllib.request.urlopen,
-         max_n_bytes: int=5*1024*1024, timeout: float=30) -> List[str]:
-    """Open the given URL and selects `selector` xpath text.
-
-    Potential errors:
-    URLError -- could not fetch data
+def do_fetch(url: str, selector: etree.XPath, 
+             urlopen: Callable[[str], HTTPResponse]=urllib.request.urlopen,
+             max_n_bytes: int=5*1024*1024,
+             timeout: float=30) -> Tuple[DataFrame, str]:
+    """Open the given URL and selects `selector` xpath, as a
+    (DataFrame, error_message) tuple.
 
     Keyword arguments:
-    urlopen --  urllib.request.urlopen, or a stub.
-    timeout --  number of seconds before we throw a URLError
+    urlopen --  urllib.request.urlopen, or a stub
+    max_n_bytes -- number of bytes read before we abort
+    timeout --  number of seconds before we abort
     """
-    (response_info, text) = fetch_text(url, urlopen=urlopen, timeout=timeout)
+    try:
+        (response_info, text) = fetch_text(url, urlopen=urlopen, timeout=timeout)
+    except URLError as e:
+        return (None, f'Fetch error: {e.msg}')
+    except os.TimeoutError:
+        return (None, 'HTTP request timed out')
+    except ValueError as e:
+        return (None, str(e)) # Exceeded max_n_bytes
+    except UnicodeDecodeError:
+        return (None, 'HTML or XML has invalid charset')
+
     is_html = response_info.get_content_type() == 'text/html'
 
-    tree = parse_document(text, is_html, source_url=url)
+    tree = parse_document(text, is_html) # FIXME handle errors
 
-    return select(tree, selector)
+    values = select(tree, selector) # FIXME handle errors?
+
+    table = pandas.DataFrame({ str(selector): values })
+
+    return (table, None)
 
 
 def fetch_text(url: str, max_n_bytes: int=5*1024*1024, timeout: float=30,
@@ -153,33 +153,3 @@ def fetch_text(url: str, max_n_bytes: int=5*1024*1024, timeout: float=30,
 
         text = b.decode(response.info().get_content_charset() or 'utf-8')
         return (response.info(), text)
-
-
-def refresh(wf_module, url: str, selector: etree.XPath, urlopen=urllib.request.urlopen,
-            timeout=30, **kwargs) -> None:
-    """Polls the server, builds a DataFrame, and saves it on wf_module if
-    needed.
-
-    If poll() fails, sets an error on the module instead.
-
-    Keyword arguments:
-    urlopen --  urllib.request.urlopen, or a stub.
-    timeout --  number of seconds before we throw a URLError
-    """
-    wf_module.set_busy()
-
-    try:
-        values = poll(url, selector, urlopen=urlopen, timeout=timeout)
-        table = pandas.DataFrame({ str(selector): values })
-    except URLError as e:
-        wf_module.set_error(f'Fetch error: {e.msg}')
-    except os.TimeoutError:
-        wf_module.set_error('HTTP request timed out')
-    except ValueError as e:
-        wf_module.set_error(str(e)) # Exceeded max_n_bytes
-    except UnicodeDecodeError:
-        wf_module.set_error('HTML or XML has invalid charset')
-
-    wf_module.set_ready(notify=False)
-
-    wf_module.save_fetched_table_if_changed(table)

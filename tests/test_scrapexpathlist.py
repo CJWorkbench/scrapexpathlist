@@ -73,8 +73,7 @@ class Html1(unittest.TestCase):
                 </svg>
               </body>
             </html>''',
-            True,
-            source_url='http://example.org'
+            True
         )
 
 

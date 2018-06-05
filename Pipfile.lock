@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "4a34c81f51eef03e2ddc4d9fa6a22866684205829a7644bf246f16bac12aa574"
+            "sha256": "a166821031f60007a08b6fec9ba3caa9dc601786a8eb3ed72bbd9342668d2b3d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,12 +16,15 @@
         ]
     },
     "default": {
+        "e1839a8": {
+            "editable": true,
+            "path": "."
+        },
         "html5lib": {
             "hashes": [
                 "sha256:20b159aa3badc9d5ee8f5c647e5efd02ed2a66ab8d354930bd9ff139fc1dc0a3",
                 "sha256:66cb0dcfdbbc4f9c3ba1a63fdb511ffdbd4f513b2b6d81b80cd26ce6b3fb3736"
             ],
-            "index": "pypi",
             "version": "==1.0.1"
         },
         "lxml": {
@@ -55,7 +58,6 @@
                 "sha256:defabb7fbb99f9f7b3e0b24b286a46855caef4776495211b066e9e6592d12b04",
                 "sha256:e2629cdbcad82b83922a3488937632a4983ecc0fed3e5cfbf430d069382eeb9b"
             ],
-            "index": "pypi",
             "version": "==4.2.1"
         },
         "numpy": {
@@ -104,7 +106,6 @@
                 "sha256:d5f72c8239e46cfcc363c7e532a474b7ea3d8892b7b6e5ec0da6b3ebae2a07d3",
                 "sha256:d88f484a25ac212fd720b5f9b9686e83f86df2b091b51f4b7b1d9089bd842f79"
             ],
-            "index": "pypi",
             "version": "==0.23.0"
         },
         "python-dateutil": {
