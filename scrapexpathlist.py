@@ -16,7 +16,7 @@ def fetch(params):
     selector_string = params['selector']
 
     if not url: return (None, 'Missing URL')
-    if not selector_string is None: return (None, 'Missing selector')
+    if not selector_string: return (None, 'Missing selector')
 
     try:
         selector = xpath(selector_string)
