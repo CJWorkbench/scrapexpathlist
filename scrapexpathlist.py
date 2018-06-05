@@ -108,7 +108,7 @@ def do_fetch(url: str, selector: etree.XPath,
     """
     try:
         (response_info, text) = fetch_text(url, urlopen=urlopen, timeout=timeout)
-    except URLError as e:
+    except urllib.error.URLError as e:
         return (None, f'Fetch error: {e.msg}')
     except os.TimeoutError:
         return (None, 'HTTP request timed out')
