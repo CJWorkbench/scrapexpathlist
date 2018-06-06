@@ -18,6 +18,7 @@
       "name": "XPath selector",
       "id_name" : "selector",
       "type": "string",
+      "multiline": "True",
       "default": "",
       "placeholder":"//a/@href"
     },
