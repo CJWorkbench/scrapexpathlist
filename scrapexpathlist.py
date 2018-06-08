@@ -123,7 +123,7 @@ def do_fetch(url: str, selector: etree.XPath,
 
     values = select(tree, selector) # FIXME handle errors?
 
-    table = DataFrame({ str(selector): values })
+    table = DataFrame({ 'XPath result': values })
 
     return (table, None)
 
