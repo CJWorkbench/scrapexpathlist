@@ -1,5 +1,5 @@
 {
-  "name": "Scrape list",
+  "name": "Scrape with Xpath",
   "id_name": "scrapexpathlist",
   "category" : "Add data",
   "icon" : "scraper",
