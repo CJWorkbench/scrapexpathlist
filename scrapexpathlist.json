@@ -1,7 +1,7 @@
 {
   "name": "Scrape with Xpath",
   "id_name": "scrapexpathlist",
-  "category" : "Add data",
+  "category" : "Scrape",
   "icon" : "scraper",
   "description" : "Scrape HTML or XML using XPath",
   "loads_data": true,
