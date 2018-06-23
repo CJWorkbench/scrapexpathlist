@@ -2,7 +2,7 @@
   "name": "Scrape with Xpath",
   "id_name": "scrapexpathlist",
   "category" : "Add data",
-  "icon" : "scraper",
+  "icon" : "Clean",
   "description" : "Scrape HTML or XML using XPath",
   "loads_data": true,
   "help_url": "modules/scrape/scrape-xpath-list",
