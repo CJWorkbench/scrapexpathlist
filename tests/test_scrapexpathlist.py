@@ -1,54 +1,49 @@
 #!/usr/bin/env python3
 
 import io
-from lxml import etree
-from scrapexpathlist import parse_document, select, xpath
 import unittest
+from scrapexpathlist import parse_document, select, xpath, fetch_text
 
 
 class Xml1(unittest.TestCase):
     def setUp(self):
         self.tree = parse_document(
-            '<a><b><c>c</c><d foo="bar">d</d></b><b><c>C</c><d foo="baz">D</d></b><e>ehead<f>f</f>etail</e></a>',
+            (
+                '<a><b><c>c</c><d foo="bar">d</d></b><b><c>C</c>'
+                '<d foo="baz">D</d></b><e>ehead<f>f</f>etail</e></a>'
+            ),
             False
         )
-
 
     def select(self, selector):
         return select(self.tree, xpath(selector))
 
-
     def test_convert_node_to_text(self):
-        self.assertEqual(self.select('//c'), [ 'c', 'C' ])
-
+        self.assertEqual(self.select('//c'), ['c', 'C'])
 
     def test_convert_subnodes_to_text(self):
-        self.assertEqual(self.select('//b'), [ 'cd', 'CD' ])
-
+        self.assertEqual(self.select('//b'), ['cd', 'CD'])
 
     def test_attributes(self):
-        self.assertEqual(self.select('//d/@foo'), [ 'bar', 'baz' ])
-
+        self.assertEqual(self.select('//d/@foo'), ['bar', 'baz'])
 
     def test_text(self):
-        self.assertEqual(self.select('//d/text()'), [ 'd', 'D' ])
-
+        self.assertEqual(self.select('//d/text()'), ['d', 'D'])
 
     def test_head(self):
-        self.assertEqual(self.select('//f/preceding-sibling::text()'), [ 'ehead' ])
-
+        self.assertEqual(self.select('//f/preceding-sibling::text()'),
+                         ['ehead'])
 
     def test_tail(self):
-        self.assertEqual(self.select('//f/following-sibling::text()'), [ 'etail' ])
-
+        self.assertEqual(self.select('//f/following-sibling::text()'),
+                         ['etail'])
 
     def test_count(self):
-        self.assertEqual(self.select('count(//d)'), [ 2.0 ])
-
+        self.assertEqual(self.select('count(//d)'), [2.0])
 
     def test_bool(self):
-        self.assertEqual(self.select('boolean(//f)'), [ True ])
-        self.assertEqual(self.select('boolean(//g)'), [ False ])
+        self.assertEqual(self.select('boolean(//f)'), [True])
+        self.assertEqual(self.select('boolean(//g)'), [False])
 
 
 class Html1(unittest.TestCase):
@@ -76,20 +71,81 @@ class Html1(unittest.TestCase):
             True
         )
 
-
     def select(self, selector):
         return select(self.tree, xpath(selector))
 
-
     def test_simple(self):
-        self.assertEqual(self.select('//p'), [ 'Foo', 'Bar' ])
-
+        self.assertEqual(self.select('//p'), ['Foo', 'Bar'])
 
     def test_svg_namespace(self):
         # Works across namespaces
-        self.assertEqual(self.select('//svg:path/@d'), [ 'M0 0L2 2' ])
-
+        self.assertEqual(self.select('//svg:path/@d'), ['M0 0L2 2'])
 
     def test_add_missing_elements(self):
         # Parse invalid HTML by adding missing elements
-        self.assertEqual(self.select('//tr'), [ 'Single-cell table' ])
+        self.assertEqual(self.select('//tr'), ['Single-cell table'])
+
+
+class FakeResponseInfo:
+    def __init__(self, headers):
+        self.headers = headers
+
+    def get(self, key, default=None):
+        return self.headers.get(key, default)
+
+    def get_content_charset(self):
+        parts = self.headers.get('Content-Type', '').split('charset=')
+        if len(parts) == 2:
+            return parts[1]
+        else:
+            return None
+
+
+class FakeResponse:
+    def __init__(self, body, headers):
+        self.body = io.BytesIO(body)
+        self._info = FakeResponseInfo(headers)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        pass
+
+    def read(self, max_n_bytes):
+        return self.body.read(max_n_bytes)
+
+    def info(self):
+        return self._info
+
+
+class FetchTextTest(unittest.TestCase):
+    def _go(self, response):
+        return fetch_text('http://example.org',
+                          urlopen=lambda x, **kwargs: response)
+
+    def test_default(self):
+        info, s = self._go(FakeResponse(b'<p>hi</p>', {}))
+        self.assertEqual(s, '<p>hi</p>')
+
+    def test_gzip_encoding(self):
+        """Test that Content-Encoding: gzip gets decoded correctly."""
+        info, s = self._go(FakeResponse(
+            (b'\x1f\x8b\x08\x00gY\xbe[\x02\xff\xb3)\xb0\xcb'
+             b'\xc8\xb4\xd1/\xb0\x03\x00e\xd27m\t\x00\x00\x00'),
+            {'Content-Encoding': 'gzip'}
+        ))
+
+        self.assertEqual(s, '<p>hi</p>')
+
+    def test_gzip_eoferror(self):
+        with self.assertRaises(EOFError):
+            self._go(FakeResponse(
+                (b'\x1f\x8b\x08\x00gY\xbe[\x02\xff\xb3)\xb0\xcb'
+                 b'\xc8\xb4\xd1/\xb0\x03\x00'),
+                {'Content-Encoding': 'gzip'}
+            ))
+
+    def test_gzip_magic_number_error(self):
+        with self.assertRaises(OSError):
+            self._go(FakeResponse(b'<p>hi</p>', {'Content-Encoding': 'gzip'}))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import gzip
 from typing import Callable, List, Tuple
 import urllib.request
 import urllib.error
@@ -114,6 +114,10 @@ def do_fetch(url: str, selector: etree.XPath,
         return (None, f'Fetch error: {e.msg}')
     except TimeoutError:
         return (None, 'HTTP request timed out')
+    except EOFError:
+        return (None, 'Compressed data was truncated')
+    except OSError:
+        return (None, 'Compressed data was not valid gzip')
     except ValueError as e:
         return (None, str(e))  # Exceeded max_n_bytes
     except UnicodeDecodeError:
@@ -143,6 +147,10 @@ def fetch_text(url: str, max_n_bytes: int=5*1024*1024, timeout: float=30,
 
     Throw `URLError` if anything fails at the HTTP level or below.
 
+    Throw `EOFError` if gzip-decoding fails.
+
+    Throw `OSError` if gzip-decoding is given non-gzipped data.
+
     Throw `UnicodeDecodeError` if we cannot understand URL's encoding.
     """
     # Throws URLError or TimeoutError
@@ -154,6 +162,9 @@ def fetch_text(url: str, max_n_bytes: int=5*1024*1024, timeout: float=30,
             raise ValueError(
                 f'HTTP response is larger than {max_n_bytes} bytes'
             )
+
+        if response.info().get('Content-Encoding') == 'gzip':
+            b = gzip.decompress(b)
 
         text = b.decode(response.info().get_content_charset() or 'utf-8')
         return (response.info(), text)
