@@ -1,11 +1,11 @@
 {
   "name": "Scrape with Xpath",
   "id_name": "scrapexpathlist",
-  "category" : "Add data",
+  "category" : "Scrape",
   "icon" : "scraper",
   "description" : "Scrape HTML or XML using XPath",
   "loads_data": true,
-  "help_url": "modules/add-data/scrape-xpath-list",
+  "help_url": "modules/scrape/scrape-with-xpath",
   "parameters": [
     {
       "name": "URL",
