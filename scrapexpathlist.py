@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 
-import io
-import os
+from typing import Callable, List, Tuple
 import urllib.request
 import urllib.error
 from lxml import etree
 from lxml.html import html5parser
 from pandas import DataFrame
-from typing import Callable, List, Tuple
 from http.client import HTTPResponse
-import re
 
 
 def fetch(params):
     url = params['url']
     selector_string = params['selector']
 
-    if not url: return (None, 'Missing URL')
-    if not selector_string: return (None, 'Missing selector')
+    if not url:
+        return (None, 'Missing URL')
+
+    if not selector_string:
+        return (None, 'Missing selector')
 
     try:
         selector = xpath(selector_string)
@@ -40,7 +40,7 @@ def xpath(s: str) -> etree.XPath:
     """
     return etree.XPath(
         s,
-        smart_strings=True, # so result strings don't ref XML doc
+        smart_strings=True,  # so result strings don't ref XML doc
         namespaces={
             'svg': 'http://www.w3.org/2000/svg',
         }
@@ -92,10 +92,10 @@ def select(tree: etree._Element, selector: etree.XPath) -> List[str]:
         return list(_item_to_string(item) for item in result)
     else:
         # count(//a) => float. Return list of float.
-        return [ result ]
+        return [result]
 
 
-def do_fetch(url: str, selector: etree.XPath, 
+def do_fetch(url: str, selector: etree.XPath,
              urlopen: Callable[[str], HTTPResponse]=urllib.request.urlopen,
              max_n_bytes: int=5*1024*1024,
              timeout: float=30) -> Tuple[DataFrame, str]:
@@ -108,23 +108,24 @@ def do_fetch(url: str, selector: etree.XPath,
     timeout --  number of seconds before we abort
     """
     try:
-        (response_info, text) = fetch_text(url, urlopen=urlopen, timeout=timeout)
+        (response_info, text) = fetch_text(url, urlopen=urlopen,
+                                           timeout=timeout)
     except urllib.error.URLError as e:
         return (None, f'Fetch error: {e.msg}')
-    except os.TimeoutError:
+    except TimeoutError:
         return (None, 'HTTP request timed out')
     except ValueError as e:
-        return (None, str(e)) # Exceeded max_n_bytes
+        return (None, str(e))  # Exceeded max_n_bytes
     except UnicodeDecodeError:
         return (None, 'HTML or XML has invalid charset')
 
     is_html = response_info.get_content_type() == 'text/html'
 
-    tree = parse_document(text, is_html) # FIXME handle errors
+    tree = parse_document(text, is_html)  # FIXME handle errors
 
-    values = select(tree, selector) # FIXME handle errors?
+    values = select(tree, selector)  # FIXME handle errors?
 
-    table = DataFrame({ 'XPath result': values })
+    table = DataFrame({'XPath result': values})
 
     return (table, None)
 
@@ -136,7 +137,7 @@ def fetch_text(url: str, max_n_bytes: int=5*1024*1024, timeout: float=30,
     This will never read more than `max_n_bytes` bytes from the response.
     It will also return before `timeout`s expire.
 
-    Throw `os.TimeoutError` if `timeout` expires.
+    Throw `TimeoutError` if `timeout` expires.
 
     Throw `ValueError` if the `max_n_bytes` is exceeded.
 
@@ -144,13 +145,15 @@ def fetch_text(url: str, max_n_bytes: int=5*1024*1024, timeout: float=30,
 
     Throw `UnicodeDecodeError` if we cannot understand URL's encoding.
     """
-    # Throws os.URLError or os.TimeoutError
+    # Throws URLError or TimeoutError
     with urlopen(url, timeout=timeout) as response:
         # TODO avoid DoS. The above timeout is the _socket_ timeout: one
         # byte from the server resets it.
         b = response.read(max_n_bytes + 1)
         if (len(b) == max_n_bytes + 1):
-            raise ValueError(f'HTTP response is larger than {max_n_bytes} bytes')
+            raise ValueError(
+                f'HTTP response is larger than {max_n_bytes} bytes'
+            )
 
         text = b.decode(response.info().get_content_charset() or 'utf-8')
         return (response.info(), text)
