@@ -88,7 +88,7 @@ def select(tree: etree._Element, selector: etree.XPath) -> List[str]:
     """
     # TODO avoid DoS. xpath selectors can take enormous amounts of CPU/memory
     result = selector(tree)
-    if hasattr(result, '__iter__'):
+    if hasattr(result, '__iter__') and not isinstance(result, str):
         return list(_item_to_string(item) for item in result)
     else:
         # count(//a) => float. Return list of float.

@@ -77,6 +77,9 @@ class Html1(unittest.TestCase):
     def test_simple(self):
         self.assertEqual(self.select('//p'), ['Foo', 'Bar'])
 
+    def test_do_not_expand_single_string(self):
+        self.assertEqual(self.select("'ab'"), ['ab'])
+
     def test_svg_namespace(self):
         # Works across namespaces
         self.assertEqual(self.select('//svg:path/@d'), ['M0 0L2 2'])
