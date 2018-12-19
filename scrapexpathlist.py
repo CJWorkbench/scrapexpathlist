@@ -21,8 +21,8 @@ def fetch(params):
 
     try:
         selector = xpath(selector_string)
-    except etree.XPathSyntaxError as e:
-        return (None, f'Bad XPath input: {e.msg}')
+    except etree.XPathSyntaxError as err:
+        return (None, f'Bad XPath input: {str(err)}')
 
     return do_fetch(url, selector)
 
@@ -110,16 +110,16 @@ def do_fetch(url: str, selector: etree.XPath,
     try:
         (response_info, text) = fetch_text(url, urlopen=urlopen,
                                            timeout=timeout)
-    except urllib.error.URLError as e:
-        return (None, f'Fetch error: {e.msg}')
+    except urllib.error.URLError as err:
+        return (None, f'Fetch error: {str(err)}')
     except TimeoutError:
         return (None, 'HTTP request timed out')
     except EOFError:
         return (None, 'Compressed data was truncated')
     except OSError:
         return (None, 'Compressed data was not valid gzip')
-    except ValueError as e:
-        return (None, str(e))  # Exceeded max_n_bytes
+    except ValueError as err:
+        return (None, str(err))  # Exceeded max_n_bytes
     except UnicodeDecodeError:
         return (None, 'HTML or XML has invalid charset')
 
