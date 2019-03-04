@@ -2,7 +2,7 @@
 
 import io
 import unittest
-from scrapexpathlist import parse_document, select, xpath, fetch_text
+from scrapexpathlist import parse_document, select, xpath, fetch_text, do_fetch
 
 
 class Xml1(unittest.TestCase):
@@ -96,6 +96,9 @@ class FakeResponseInfo:
     def get(self, key, default=None):
         return self.headers.get(key, default)
 
+    def get_content_type(self):
+        return self.headers.get('Content-Type', '').split(';')[0] or None
+
     def get_content_charset(self):
         parts = self.headers.get('Content-Type', '').split('charset=')
         if len(parts) == 2:
@@ -120,6 +123,24 @@ class FakeResponse:
 
     def info(self):
         return self._info
+
+
+class DoFetchTests(unittest.TestCase):
+    def _go(self, selector, response):
+        return do_fetch(
+            url='http://example.org',
+            selector=selector,
+            urlopen=lambda x, **kwargs: response
+        )
+
+    def test_xpath_eval_error(self):
+        selector = xpath('//ns:a')  # valid xpath
+        result = self._go(
+            selector,
+            FakeResponse(b'<p>hi</p>', {'Content-Type': 'text/html'})
+        )
+        self.assertEqual(result,
+                         (None, 'XPath error: Undefined namespace prefix'))
 
 
 class FetchTextTest(unittest.TestCase):

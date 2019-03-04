@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+
 import gzip
 from typing import Callable, List, Tuple
 import urllib.request
 import urllib.error
 from lxml import etree
 from lxml.html import html5parser
-from pandas import DataFrame
 from http.client import HTTPResponse
+from pandas import DataFrame
 
 
 def fetch(params):
@@ -28,7 +29,8 @@ def fetch(params):
 
 
 def xpath(s: str) -> etree.XPath:
-    """Parses an XPath selector, or throws etree.XPathSyntaxError.
+    """
+    Parse an XPath selector, or raise etree.XPathSyntaxError.
 
     A word on namespaces: this module parses HTML without a namespace.
     It parses embedded SVGs in the "svg" namespace. So your XPath
@@ -84,7 +86,10 @@ def _item_to_string(item) -> str:
 
 
 def select(tree: etree._Element, selector: etree.XPath) -> List[str]:
-    """Run an xpath expression on `tree` and convert results to strings.
+    """
+    Run an xpath expression on `tree` and convert results to strings.
+
+    Raise XPathEvalError on error.
     """
     # TODO avoid DoS. xpath selectors can take enormous amounts of CPU/memory
     result = selector(tree)
@@ -95,10 +100,13 @@ def select(tree: etree._Element, selector: etree.XPath) -> List[str]:
         return [result]
 
 
-def do_fetch(url: str, selector: etree.XPath,
-             urlopen: Callable[[str], HTTPResponse]=urllib.request.urlopen,
-             max_n_bytes: int=5*1024*1024,
-             timeout: float=30) -> Tuple[DataFrame, str]:
+def do_fetch(
+    url: str,
+    selector: etree.XPath,
+    urlopen: Callable[[str], HTTPResponse] = urllib.request.urlopen,
+    max_n_bytes: int = 5*1024*1024,
+    timeout: float = 30
+) -> Tuple[DataFrame, str]:
     """Open the given URL and selects `selector` xpath, as a
     (DataFrame, error_message) tuple.
 
@@ -127,15 +135,22 @@ def do_fetch(url: str, selector: etree.XPath,
 
     tree = parse_document(text, is_html)  # FIXME handle errors
 
-    values = select(tree, selector)  # FIXME handle errors?
+    try:
+        values = select(tree, selector)
+    except etree.XPathEvalError as err:
+        return (None, 'XPath error: %s' % err)
 
     table = DataFrame({'XPath result': values})
 
     return (table, None)
 
 
-def fetch_text(url: str, max_n_bytes: int=5*1024*1024, timeout: float=30,
-               urlopen: Callable[[str], HTTPResponse]=urllib.request.urlopen):
+def fetch_text(
+    url: str,
+    max_n_bytes: int = 5*1024*1024,
+    timeout: float = 30,
+    urlopen: Callable[[str], HTTPResponse] = urllib.request.urlopen
+):
     """Fetch (HTTPResponse.info(), text_content_str) from `url`.
 
     This will never read more than `max_n_bytes` bytes from the response.

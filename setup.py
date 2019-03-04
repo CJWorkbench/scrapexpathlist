@@ -9,7 +9,7 @@ setup(
     author='Adam Hooper',
     author_email='adam@adamhooper.com',
     url='https://github.com/CJWorkbench/scrape-xpath-list',
-    packages=[ '' ],
-    py_modules=[ 'scrapexpathlist' ],
-    install_requires=[ 'pandas==0.23.0', 'lxml==4.2.1', 'html5lib==1.0.1' ]
+    packages=[''],
+    py_modules=['scrapexpathlist'],
+    install_requires=['pandas==0.24.1', 'lxml==4.2.1', 'html5lib==1.0.1']
 )
