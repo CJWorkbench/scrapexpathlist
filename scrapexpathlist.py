@@ -2,12 +2,21 @@
 
 import gzip
 from typing import Callable, List, Tuple
+import warnings
 import urllib.request
 import urllib.error
+from html5lib.constants import DataLossWarning
 from lxml import etree
 from lxml.html import html5parser
 from http.client import HTTPResponse
 from pandas import DataFrame
+
+
+# GLOBALLY ignore the warnings that (hopefully) only this module will emit. The
+# warnings all have to do with "invalid" HTML, but that HTML is often good
+# enough for our users so it isn't worth dumping anything to stderr.
+warnings.filterwarnings('ignore', category=DataLossWarning,
+                        module=r'html5lib\._ihatexml')
 
 
 def fetch(params):

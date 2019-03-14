@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-
 import io
 import unittest
+import warnings
 from scrapexpathlist import parse_document, select, xpath, fetch_text, do_fetch
+
+
+class UnittestRunnerThatDoesntAddWarningFilter(unittest.TextTestRunner):
+    def __init(self, *args, **kwargs):
+        print(repr((args, kwargs)))
+        super().__init__(*args, **kwargs, warnings=None)
 
 
 class Xml1(unittest.TestCase):
@@ -89,6 +95,14 @@ class Html1(unittest.TestCase):
         self.assertEqual(self.select('//tr'), ['Single-cell table'])
 
 
+class HtmlTest(unittest.TestCase):
+    def test_no_warning_coercing_non_xml_name(self):
+        # Turn warning into error (just for this test -- the test runner resets
+        # filters each test)
+        warnings.simplefilter('error', append=True)
+        parse_document('<ns:html></ns:html>', True)
+
+
 class FakeResponseInfo:
     def __init__(self, headers):
         self.headers = headers
@@ -173,3 +187,7 @@ class FetchTextTest(unittest.TestCase):
     def test_gzip_magic_number_error(self):
         with self.assertRaises(OSError):
             self._go(FakeResponse(b'<p>hi</p>', {'Content-Encoding': 'gzip'}))
+
+
+if __name__ == '__main__':
+    unittest.main(testRunner=UnittestRunnerThatDoesntAddWarningFilter())

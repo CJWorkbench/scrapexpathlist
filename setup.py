@@ -11,5 +11,6 @@ setup(
     url='https://github.com/CJWorkbench/scrape-xpath-list',
     packages=[''],
     py_modules=['scrapexpathlist'],
-    install_requires=['pandas==0.24.1', 'lxml==4.2.1', 'html5lib==1.0.1']
+    install_requires=['pandas==0.24.1', 'lxml==4.2.1', 'html5lib==1.0.1'],
+    test_runner='test_scrapexpathlist:UnittestRunnerThatDoesntAddWarningFilter'
 )
