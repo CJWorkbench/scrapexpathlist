@@ -1,8 +1,12 @@
 {
   "name": "Scrape with Xpath",
   "id_name": "scrapexpathlist",
-  "category" : "Scrape",
-  "icon" : "scraper",
+  "category": "Scrape",
+  "icon": "scraper",
+  "deprecated": {
+    "end_date": "2019-05-31",
+    "message": "\"Scrape with Xpath\" is obsolete and will be deleted May 31st. Please replace this step with \"XPath Extractor\" — which supports multiple URLs and columns."
+  },
   "description" : "Scrape HTML or XML using XPath",
   "loads_data": true,
   "help_url": "modules/scrape/scrape-with-xpath",
