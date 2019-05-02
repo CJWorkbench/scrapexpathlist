@@ -22,7 +22,7 @@
       "name": "XPath selector",
       "id_name" : "selector",
       "type": "string",
-      "multiline": "True",
+      "multiline": true,
       "default": "",
       "placeholder":"//a/@href"
     },
