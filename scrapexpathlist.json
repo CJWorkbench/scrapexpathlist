@@ -5,7 +5,7 @@
   "icon": "scraper",
   "deprecated": {
     "end_date": "2019-05-31",
-    "message": "This step will stop being supported on May 31st 2019. It has been replaced with \"XPath Extractor\"."
+    "message": "This step is obsolete. Use \"XPath Extractor\" instead."
   },
   "description" : "Scrape HTML or XML using XPath",
   "loads_data": true,
